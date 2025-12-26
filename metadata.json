@@ -1,0 +1,7 @@
+{
+  "name": "InkStrategy AI",
+  "description": "A comprehensive social media idea generator and content planner specifically designed for tattoo and piercing studios. Analyze your Google Business Profile, generate 30-day content plans, manage posts via Kanban or Calendar views, and repurpose content with AI.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
