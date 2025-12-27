@@ -16,6 +16,14 @@ const App: React.FC = () => {
   const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const handleStartOnboarding = (p: UserPreferences) => {
     setPrefs(p);
@@ -46,14 +54,17 @@ const App: React.FC = () => {
   };
 
   const handleDuplicateIdea = (idea: ContentIdea, toPlatform: Platform) => {
-    const newIdea = {
+    const newIdea: ContentIdea = {
       ...idea,
       id: Math.random().toString(36).substr(2, 9),
       platform: toPlatform,
       status: 'Draft',
-      scheduledDate: undefined
+      scheduledDate: undefined,
+      expandedContent: idea.expandedContent,
+      blogPost: idea.blogPost
     };
-    setIdeas(prev => [...prev, newIdea as ContentIdea]);
+    setIdeas(prev => [...prev, newIdea]);
+    setNotification(`Idea copied to ${toPlatform}!`);
   };
 
   const handleUpdateIdea = (updated: ContentIdea) => {
@@ -61,12 +72,32 @@ const App: React.FC = () => {
     setSelectedIdea(updated);
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetPlatform: Platform) => {
+    e.preventDefault();
+    const ideaId = e.dataTransfer.getData('ideaId');
+    if (!ideaId) return;
+    
+    setIdeas(prev => prev.map(idea => 
+      idea.id === ideaId ? { ...idea, platform: targetPlatform } : idea
+    ));
+  };
+
   const renderKanban = () => {
     const platforms: Platform[] = ['Instagram', 'TikTok', 'Facebook', 'GBP'];
     return (
       <div className="flex space-x-6 overflow-x-auto pb-8 min-h-[70vh] custom-scrollbar">
         {platforms.map(p => (
-          <div key={p} className="flex-shrink-0 w-80 bg-slate-900/50 rounded-2xl p-4 flex flex-col border border-slate-800">
+          <div 
+            key={p} 
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, p)}
+            className="flex-shrink-0 w-80 bg-slate-900/50 rounded-2xl p-4 flex flex-col border border-slate-800 transition-colors hover:bg-slate-900/70"
+          >
             <div className="flex items-center justify-between mb-4 px-2">
               <h3 className="font-bold flex items-center space-x-2">
                 <span>{p === 'Instagram' ? '📸' : p === 'TikTok' ? '🎵' : p === 'Facebook' ? '👤' : '🏢'}</span>
@@ -102,6 +133,12 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-20">
       {loading && <LoadingScreen />}
       
+      {notification && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-2xl font-bold animate-bounce">
+          {notification}
+        </div>
+      )}
+
       <header className="px-8 py-6 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">IS</div>
@@ -159,7 +196,7 @@ const App: React.FC = () => {
             <div className="flex justify-between items-end">
               <div>
                 <h2 className="text-3xl font-bold mb-2">Content Board</h2>
-                <p className="text-slate-400">Drag to reorder or click an idea to expand it with AI.</p>
+                <p className="text-slate-400">Drag cards between columns to change platforms, or click an idea to expand it.</p>
               </div>
               <button 
                 onClick={() => prefs && generatePlan(prefs)}
