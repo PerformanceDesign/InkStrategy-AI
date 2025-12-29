@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { UserPreferences, Platform, ContentFormat } from '../types';
+import { UserPreferences, Platform, ContentFormat, ContentPillar } from '../types';
 
 interface OnboardingProps {
   onComplete: (prefs: UserPreferences) => void;
@@ -12,7 +12,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     gbpLink: '',
     platforms: ['Instagram', 'TikTok'],
     frequencyPerWeek: 3,
-    formats: ['Reels', 'Single Image', 'Educational'],
+    formats: ['Reels', 'Single Image'],
+    pillars: ['Educational', 'Artist Spotlight'],
     teamSize: 1,
     experienceLevel: 'Beginner',
     teamRoles: 'Owner does everything'
@@ -38,6 +39,23 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         : [...prev.formats, f]
     }));
   };
+
+  const togglePillar = (pillar: ContentPillar) => {
+    setPrefs(prev => {
+      const isSelected = prev.pillars.includes(pillar);
+      if (isSelected) {
+        return { ...prev, pillars: prev.pillars.filter(p => p !== pillar) };
+      } else {
+        if (prev.pillars.length >= 4) return prev;
+        return { ...prev, pillars: [...prev.pillars, pillar] };
+      }
+    });
+  };
+
+  const availablePillars: ContentPillar[] = [
+    'Funny', 'Educational', 'Informational', 'Sales',
+    'Behind the Scenes', 'Artist Spotlight', 'Client Stories', 'Studio Vibe'
+  ];
 
   return (
     <div className="max-w-2xl mx-auto my-12 p-8 glass rounded-3xl shadow-2xl">
@@ -107,9 +125,24 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
 
           <div>
+            <label className="block text-sm font-medium mb-3">Content Pillars (Select up to 4):</label>
+            <div className="flex flex-wrap gap-2">
+              {availablePillars.map(pillar => (
+                <button
+                  key={pillar}
+                  onClick={() => togglePillar(pillar)}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${prefs.pillars.includes(pillar) ? 'bg-purple-600 border-purple-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                >
+                  {pillar}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium mb-3">Formats you're comfortable with:</label>
             <div className="flex flex-wrap gap-2">
-              {(['Reels', 'Single Image', 'Carousel', 'Story', 'Funny', 'Educational', 'Informational', 'Sales'] as ContentFormat[]).map(f => (
+              {(['Reels', 'Single Image', 'Carousels', 'Stories', 'Videos', 'Short-form videos'] as ContentFormat[]).map(f => (
                 <button
                   key={f}
                   onClick={() => toggleFormat(f)}

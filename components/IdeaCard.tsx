@@ -22,9 +22,14 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onSelect, onDelete, onDuplica
       className="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-sm group hover:border-indigo-500 transition-all cursor-grab active:cursor-grabbing"
     >
       <div className="flex justify-between items-start mb-2">
-        <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-          {idea.format}
-        </span>
+        <div className="flex flex-wrap gap-1">
+          <span className="text-[9px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+            {idea.format}
+          </span>
+          <span className="text-[9px] uppercase font-bold tracking-widest text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+            {idea.pillar}
+          </span>
+        </div>
         <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button 
             title="Duplicate to same platform"

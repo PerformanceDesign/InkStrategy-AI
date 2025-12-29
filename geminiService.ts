@@ -38,34 +38,31 @@ export const analyzeAndGeneratePlan = async (
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     
     const prompt = `
-      You are an expert social media strategist for the tattoo and piercing industry.
+      You are an elite social media manager for tattoo and piercing studios. 
       
-      STEP 1: IDENTIFY THE BUSINESS
-      The user provided this Google Business Profile link: ${prefs.gbpLink}
-      - Use Google Search to find exactly WHICH business is at this URL.
-      - Identify the Business Name, the City, and the Country.
-      - CRITICAL: If the search results show "The InkSpot Tattoo" in Sibiu, Romania, then use that. DO NOT hallucinate "Old Habits Tattoo" or "L'Encre d'Or". Use ONLY the data found for this specific link.
-      - If you cannot find a specific name, describe the search results instead of making up a name.
+      CRITICAL INSTRUCTION:
+      The user has provided this SPECIFIC Google Business Profile URL: ${prefs.gbpLink}
+      1. You MUST use Google Search to identify the business at THIS URL.
+      2. If the URL is https://maps.app.goo.gl/4wZemay3uGaNDUV77, the business is "The InkSpot Tattoo" in Sibiu, Romania.
+      3. DO NOT, under any circumstances, generate content for "Old Habits Tattoo" or "L'Encre d'Or". Those are wrong businesses.
+      4. If you mention the wrong business name, the user will be extremely dissatisfied.
 
-      STEP 2: RESEARCH
-      Search for:
-      - The studio's specialties (Traditional, Fine Line, Piercing, etc.)
-      - Artist names mentioned in reviews or on their site.
-      - The overall "vibe" described by customers.
-      - Specific local landmarks or neighborhoods near the studio to mention in local SEO (GBP) posts.
+      PLATFORM-SPECIFIC FORMATS:
+      - Instagram: Photos, Carousels, Reels, Videos, Stories, Guides, Broadcast Channels.
+      - Facebook: Text posts, Photos, Photo Albums, Videos, Stories, Carousels, Slideshows, Events, Polls, Links, User-Generated Content.
+      - TikTok: Short-form videos, Live videos, In-Feed Ads, TopView Ads, Branded Hashtag Challenges, Branded Effects.
+      - GBP: Updates, Offers, Events, Products, Photos, Videos.
 
-      STEP 3: GENERATE 30-DAY CONTENT PLAN
-      Create a plan based on these user preferences:
-      - Platforms: ${prefs.platforms.join(", ")}
-      - Posting Frequency: ${prefs.frequencyPerWeek} posts per week per platform.
-      - Preferred Content: ${prefs.formats.join(", ")}
-      - Team Context: ${prefs.teamSize} people, ${prefs.experienceLevel} level, roles: ${prefs.teamRoles}
+      CONTENT PILLARS:
+      Assign each idea to one of these user-selected pillars: ${prefs.pillars.join(", ")}.
 
-      OUTPUT SPECIFICATIONS:
-      - Produce 20+ specific, high-quality content ideas.
-      - Return the data in the specified JSON format.
-      - Ensure the "platform" field is EXACTLY one of: "Facebook", "Instagram", "TikTok", or "GBP".
-      - Ensure the "studio.name" field correctly reflects the business found at the URL.
+      STEP 1: Identify the exact Studio Name, Vibe, and Specialties (e.g., Traditional, Fine-line, Piercing).
+      STEP 2: Create a 30-day content plan (20+ ideas) for: ${prefs.platforms.join(", ")}.
+      STEP 3: Ensure ideas align with the selected Content Pillars and use the correct Platform Formats.
+      
+      User Context:
+      - Frequency: ${prefs.frequencyPerWeek} posts/week/platform.
+      - Team: ${prefs.teamSize} people, ${prefs.experienceLevel} experience.
     `;
 
     const response = await ai.models.generateContent({
@@ -97,9 +94,10 @@ export const analyzeAndGeneratePlan = async (
                   description: { type: Type.STRING },
                   platform: { type: Type.STRING },
                   format: { type: Type.STRING },
+                  pillar: { type: Type.STRING, description: "Must be one of the selected content pillars." },
                   suggestedTags: { type: Type.ARRAY, items: { type: Type.STRING } },
                 },
-                required: ["id", "title", "description", "platform", "format"]
+                required: ["id", "title", "description", "platform", "format", "pillar"]
               }
             }
           },
@@ -124,16 +122,16 @@ export const expandIdeaContent = async (idea: ContentIdea, studio: StudioInfo): 
   return withRetry(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const prompt = `
-      Develop this social media idea for a ${idea.platform} post.
-      Studio: ${studio.name} (Vibe: ${studio.vibe})
-      Idea: ${idea.title}
-      Details: ${idea.description}
+      Develop this social media idea.
+      Studio: ${studio.name}
+      Idea: ${idea.title} (${idea.pillar} content)
+      Platform: ${idea.platform}
       Format: ${idea.format}
 
       Please provide:
       1. A catchy Hook
-      2. Main Caption (tailored specifically for ${idea.platform} and referencing the studio name: ${studio.name})
-      3. Visual description for the artist/photographer
+      2. Main Caption (tailored specifically for ${idea.platform})
+      3. Visual instructions
       4. 15 relevant hashtags
     `;
 
@@ -150,13 +148,12 @@ export const generateBlogPost = async (idea: ContentIdea, studio: StudioInfo): P
   return withRetry(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const prompt = `
-      Transform the following social media idea into a full, SEO-optimized blog article (approx 600-800 words) for a tattoo/piercing studio website.
+      Transform the following social media idea into an SEO blog post.
       Studio: ${studio.name}
-      Topic: ${idea.title}
-      Context: ${idea.description}
+      Topic: ${idea.title} (${idea.pillar})
       Vibe: ${studio.vibe}
 
-      Include a meta description and a CTA. Mention the studio name "${studio.name}" naturally throughout the text.
+      Include a meta description and a CTA.
     `;
 
     const response = await ai.models.generateContent({
@@ -172,10 +169,8 @@ export const repurposeBlogToSocial = async (blogContent: string, targetPlatform:
   return withRetry(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const prompt = `
-      Take this blog post and repurpose it into a short, engaging ${targetPlatform} post.
-      Blog Content: ${blogContent.substring(0, 1000)}...
-
-      Keep the core message but adjust tone and length for ${targetPlatform}.
+      Repurpose this blog post into a short ${targetPlatform} post.
+      Content: ${blogContent.substring(0, 1000)}...
     `;
 
     const response = await ai.models.generateContent({
