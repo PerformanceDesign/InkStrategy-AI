@@ -12,6 +12,8 @@ export type ContentPillar =
   | 'Funny' | 'Educational' | 'Informational' | 'Sales' 
   | 'Behind the Scenes' | 'Artist Spotlight' | 'Client Stories' | 'Studio Vibe';
 
+export type LanguagePreference = 'Local' | 'English' | 'Both';
+
 export interface TeamMember {
   role: string;
   name: string;
@@ -23,6 +25,7 @@ export interface UserPreferences {
   frequencyPerWeek: number;
   formats: ContentFormat[];
   pillars: ContentPillar[];
+  languagePreference: LanguagePreference;
   teamSize: number;
   experienceLevel: 'Beginner' | 'Intermediate' | 'Expert';
   teamRoles: string;

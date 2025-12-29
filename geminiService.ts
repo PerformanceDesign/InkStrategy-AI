@@ -40,12 +40,12 @@ export const analyzeAndGeneratePlan = async (
     const prompt = `
       You are an elite social media manager for tattoo and piercing studios. 
       
-      CRITICAL INSTRUCTION:
-      The user has provided this SPECIFIC Google Business Profile URL: ${prefs.gbpLink}
-      1. You MUST use Google Search to identify the business at THIS URL.
-      2. If the URL is https://maps.app.goo.gl/4wZemay3uGaNDUV77, the business is "The InkSpot Tattoo" in Sibiu, Romania.
-      3. DO NOT, under any circumstances, generate content for "Old Habits Tattoo" or "L'Encre d'Or". Those are wrong businesses.
-      4. If you mention the wrong business name, the user will be extremely dissatisfied.
+      CRITICAL IDENTITY INSTRUCTION:
+      The user provided this Google Business Profile URL: ${prefs.gbpLink}
+      1. You MUST use the googleSearch tool to find the EXACT name and location of the business at THIS URL.
+      2. DO NOT hallucinate common studio names like "The Ink Factory" (Dublin) or "Wellington Quay". 
+      3. For the link provided (https://maps.app.goo.gl/4MQfqhe4rrXLqwB68), the business is "The InkSpot Tattoo Sibiu" in Sibiu, Romania. 
+      4. If the studio is in Romania, and the user chose "Local" or "Both" languages, the second language MUST be Romanian (not Irish/Gaelic).
 
       PLATFORM-SPECIFIC FORMATS:
       - Instagram: Photos, Carousels, Reels, Videos, Stories, Guides, Broadcast Channels.
@@ -54,15 +54,11 @@ export const analyzeAndGeneratePlan = async (
       - GBP: Updates, Offers, Events, Products, Photos, Videos.
 
       CONTENT PILLARS:
-      Assign each idea to one of these user-selected pillars: ${prefs.pillars.join(", ")}.
+      Use these pillars for categorization: ${prefs.pillars.join(", ")}.
+      Preferred formats: ${prefs.formats.join(", ")}.
 
-      STEP 1: Identify the exact Studio Name, Vibe, and Specialties (e.g., Traditional, Fine-line, Piercing).
-      STEP 2: Create a 30-day content plan (20+ ideas) for: ${prefs.platforms.join(", ")}.
-      STEP 3: Ensure ideas align with the selected Content Pillars and use the correct Platform Formats.
-      
-      User Context:
-      - Frequency: ${prefs.frequencyPerWeek} posts/week/platform.
-      - Team: ${prefs.teamSize} people, ${prefs.experienceLevel} experience.
+      GOAL: Create a 30-day content plan (20+ ideas) for: ${prefs.platforms.join(", ")}.
+      LANGUAGE: ${prefs.languagePreference === 'Local' ? 'Romanian' : prefs.languagePreference === 'English' ? 'English' : 'BOTH English and Romanian (bilingual posts)'}.
     `;
 
     const response = await ai.models.generateContent({
@@ -94,7 +90,7 @@ export const analyzeAndGeneratePlan = async (
                   description: { type: Type.STRING },
                   platform: { type: Type.STRING },
                   format: { type: Type.STRING },
-                  pillar: { type: Type.STRING, description: "Must be one of the selected content pillars." },
+                  pillar: { type: Type.STRING },
                   suggestedTags: { type: Type.ARRAY, items: { type: Type.STRING } },
                 },
                 required: ["id", "title", "description", "platform", "format", "pillar"]
@@ -122,15 +118,13 @@ export const expandIdeaContent = async (idea: ContentIdea, studio: StudioInfo): 
   return withRetry(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const prompt = `
-      Develop this social media idea.
-      Studio: ${studio.name}
-      Idea: ${idea.title} (${idea.pillar} content)
-      Platform: ${idea.platform}
-      Format: ${idea.format}
-
+      Develop this social media idea for the studio "${studio.name}".
+      Idea: ${idea.title}
+      Language: Match the language of the provided title/description exactly. If it is bilingual (English/Romanian), provide both.
+      
       Please provide:
       1. A catchy Hook
-      2. Main Caption (tailored specifically for ${idea.platform})
+      2. Main Caption
       3. Visual instructions
       4. 15 relevant hashtags
     `;
@@ -140,7 +134,7 @@ export const expandIdeaContent = async (idea: ContentIdea, studio: StudioInfo): 
       contents: prompt,
     });
 
-    return response.text || "Failed to expand idea.";
+    return response.text || "Failed to expand content.";
   });
 };
 
@@ -148,12 +142,8 @@ export const generateBlogPost = async (idea: ContentIdea, studio: StudioInfo): P
   return withRetry(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     const prompt = `
-      Transform the following social media idea into an SEO blog post.
-      Studio: ${studio.name}
-      Topic: ${idea.title} (${idea.pillar})
-      Vibe: ${studio.vibe}
-
-      Include a meta description and a CTA.
+      Transform this social media idea into an SEO blog post for "${studio.name}".
+      Topic: ${idea.title}
     `;
 
     const response = await ai.models.generateContent({
